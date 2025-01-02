@@ -3,7 +3,7 @@ name = "librashader-common"
 edition = "2021"
 
 license = "MPL-2.0 OR GPL-3.0-only"
-version = "0.5.1"
+version = "0.6.2"
 authors = ["Ronny Chan <ronny@ronnychan.ca>"]
 repository = "https://github.com/SnowflakePowered/librashader"
 readme = "../README.md"
@@ -27,6 +27,7 @@ num-traits = "0.2.15"
 rustc-hash = "2.0.0"
 halfbrown = "0.2.4"
 smartstring = "1.0"
+bitflags = { version = "2", features = ["serde"] }
 
 glow = { workspace = true, optional = true }
 ash = { workspace = true, optional = true }

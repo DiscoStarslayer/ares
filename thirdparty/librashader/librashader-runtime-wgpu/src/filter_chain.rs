@@ -1,5 +1,5 @@
 use librashader_common::map::FastHashMap;
-use librashader_presets::ShaderPreset;
+use librashader_presets::{ShaderFeatures, ShaderPreset};
 use librashader_reflect::back::targets::WGSL;
 use librashader_reflect::back::{CompileReflectShader, CompileShader};
 use librashader_reflect::front::SpirvCompilation;
@@ -88,7 +88,7 @@ pub(crate) struct FilterCommon {
     pub samplers: SamplerSet,
     pub config: RuntimeParameters,
     pub(crate) draw_quad: DrawQuad,
-    device: Arc<Device>,
+    pub(crate) device: Arc<Device>,
     pub(crate) queue: Arc<wgpu::Queue>,
 }
 
@@ -96,12 +96,13 @@ impl FilterChainWgpu {
     /// Load the shader preset at the given path into a filter chain.
     pub fn load_from_path(
         path: impl AsRef<Path>,
+        features: ShaderFeatures,
         device: Arc<Device>,
         queue: Arc<wgpu::Queue>,
         options: Option<&FilterChainOptionsWgpu>,
     ) -> error::Result<FilterChainWgpu> {
         // load passes from preset
-        let preset = ShaderPreset::try_parse(path)?;
+        let preset = ShaderPreset::try_parse(path, features)?;
 
         Self::load_from_preset(preset, device, queue, options)
     }
@@ -183,7 +184,7 @@ impl FilterChainWgpu {
 
         // initialize passes
         let filters = Self::init_passes(
-            Arc::clone(&device),
+            &device,
             passes,
             &semantics,
             options.and_then(|o| o.adapter_info.as_ref()),
@@ -191,7 +192,7 @@ impl FilterChainWgpu {
         )?;
 
         let samplers = SamplerSet::new(&device);
-        let mut mipmapper = MipmapGen::new(Arc::clone(&device));
+        let mut mipmapper = MipmapGen::new(&device);
         let luts = FilterChainWgpu::load_luts(
             &device,
             &queue,
@@ -203,7 +204,7 @@ impl FilterChainWgpu {
         //
         let framebuffer_gen = || {
             Ok::<_, error::FilterChainError>(OwnedImage::new(
-                Arc::clone(&device),
+                &device,
                 Size::new(1, 1),
                 1,
                 TextureFormat::Bgra8Unorm,
@@ -285,7 +286,7 @@ impl FilterChainWgpu {
                 let _old_back = std::mem::replace(
                     &mut back,
                     OwnedImage::new(
-                        Arc::clone(&self.common.device),
+                        &self.common.device,
                         input.size().into(),
                         1,
                         input.format().into(),
@@ -293,14 +294,14 @@ impl FilterChainWgpu {
                 );
             }
 
-            back.copy_from(cmd, input);
+            back.copy_from(&self.common.device, cmd, input);
 
             self.history_framebuffers.push_front(back)
         }
     }
 
     fn init_passes(
-        device: Arc<Device>,
+        device: &wgpu::Device,
         passes: Vec<ShaderPassMeta>,
         semantics: &ShaderSemantics,
         adapter_info: Option<&wgpu::AdapterInfo>,
@@ -353,7 +354,7 @@ impl FilterChainWgpu {
                         };
 
                     let graphics_pipeline = WgpuGraphicsPipeline::new(
-                        Arc::clone(&device),
+                        &device,
                         &wgsl,
                         &reflection,
                         render_pass_format.unwrap_or(TextureFormat::Rgba8Unorm),
@@ -362,7 +363,6 @@ impl FilterChainWgpu {
                     );
 
                     Ok(FilterPass {
-                        device: Arc::clone(&device),
                         reflection,
                         uniform_storage,
                         uniform_bindings,
@@ -457,7 +457,7 @@ impl FilterChainWgpu {
             &mut self.output_framebuffers,
             &mut self.feedback_framebuffers,
             passes,
-            &(),
+            &self.common.device,
             Some(&mut |index: usize,
                        pass: &FilterPass,
                        output: &OwnedImage,
@@ -505,7 +505,7 @@ impl FilterChainWgpu {
                     FilterMode::Nearest,
                 );
 
-                target.generate_mipmaps(cmd, &mut self.mipmapper, &sampler);
+                target.generate_mipmaps(&self.common.device, cmd, &mut self.mipmapper, &sampler);
             }
 
             source = self.common.output_textures[index].clone().unwrap();
@@ -518,7 +518,8 @@ impl FilterChainWgpu {
             let index = passes_len - 1;
             if !pass.graphics_pipeline.has_format(viewport.output.format) {
                 // need to recompile
-                pass.graphics_pipeline.recompile(viewport.output.format);
+                pass.graphics_pipeline
+                    .recompile(&self.common.device, viewport.output.format);
             }
 
             source.filter_mode = pass.meta.filter;

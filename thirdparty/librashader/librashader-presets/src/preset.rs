@@ -5,6 +5,8 @@ use std::ops::Mul;
 use std::path::PathBuf;
 use std::str::FromStr;
 
+pub use librashader_common::shader_features::ShaderFeatures;
+
 /// The configuration for a single shader pass.
 pub type PassConfig = PathReference<PassMeta>;
 
@@ -214,4 +216,7 @@ pub struct ShaderPreset {
 
     /// Preset information for each user parameter.
     pub parameters: Vec<ParameterMeta>,
+
+    /// Shader features to enable.
+    pub features: ShaderFeatures,
 }

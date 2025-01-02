@@ -179,6 +179,31 @@ typedef struct _shader_preset *libra_shader_preset_t;
 /// A handle to a preset wildcard context object.
 typedef struct _preset_ctx *libra_preset_ctx_t;
 
+/// API version type alias.
+typedef size_t LIBRASHADER_API_VERSION;
+
+/// Options struct for loading shader presets.
+///
+/// Using this struct with `libra_preset_create_with_options` is the only way to
+/// enable extended shader preset features.
+typedef struct libra_preset_opt_t {
+  /// The librashader API version.
+  LIBRASHADER_API_VERSION version;
+  /// Enables `_HAS_ORIGINALASPECT_UNIFORMS` behaviour.
+  ///
+  /// If this is true, then `frame_options.aspect_ratio` must be set for correct behaviour of shaders.
+  ///
+  /// This is only supported on API 2 and above, otherwise this has no effect.
+  bool original_aspect_uniforms;
+  /// Enables `_HAS_FRAMETIME_UNIFORMS` behaviour.
+  ///
+  /// If this is true, then `frame_options.frames_per_second` and `frame_options.frametime_delta`
+  /// must be set for correct behaviour of shaders.
+  ///
+  /// This is only supported on API 2 and above, otherwise this has no effect.
+  bool frametime_uniforms;
+} libra_preset_opt_t;
+
 /// A preset parameter.
 typedef struct libra_preset_param_t {
   /// The name of the parameter
@@ -209,9 +234,6 @@ typedef struct libra_preset_param_list_t {
 /// A GL function loader that librashader needs to be initialized with.
 typedef const void *(*libra_gl_loader_t)(const char*);
 #endif
-
-/// API version type alias.
-typedef size_t LIBRASHADER_API_VERSION;
 
 #if defined(LIBRA_RUNTIME_OPENGL)
 /// Options for filter chain creation.
@@ -281,6 +303,18 @@ typedef struct frame_gl_opt_t {
   uint32_t total_subframes;
   /// The current sub frame. Default is 1.
   uint32_t current_subframe;
+  /// The expected aspect ratio of the source image.
+  ///
+  /// This can differ from the actual aspect ratio of the source
+  /// image.
+  ///
+  /// The default is 0, which will automatically
+  /// infer the ratio from the source image.
+  float aspect_ratio;
+  /// The original frames per second of the source. Default is 1.
+  float frames_per_second;
+  /// Time in milliseconds between the current and previous frame. Default is 0.
+  uint32_t frametime_delta;
 } frame_gl_opt_t;
 #endif
 
@@ -358,6 +392,18 @@ typedef struct frame_vk_opt_t {
   uint32_t total_subframes;
   /// The current sub frame. Default is 1.
   uint32_t current_subframe;
+  /// The expected aspect ratio of the source image.
+  ///
+  /// This can differ from the actual aspect ratio of the source
+  /// image.
+  ///
+  /// The default is 0, which will automatically
+  /// infer the ratio from the source image.
+  float aspect_ratio;
+  /// The original frames per second of the source. Default is 1.
+  float frames_per_second;
+  /// Time in milliseconds between the current and previous frame. Default is 0.
+  uint32_t frametime_delta;
 } frame_vk_opt_t;
 #endif
 
@@ -396,6 +442,18 @@ typedef struct frame_d3d11_opt_t {
   uint32_t total_subframes;
   /// The current sub frame. Default is 1.
   uint32_t current_subframe;
+  /// The expected aspect ratio of the source image.
+  ///
+  /// This can differ from the actual aspect ratio of the source
+  /// image.
+  ///
+  /// The default is 0, which will automatically
+  /// infer the ratio from the source image.
+  float aspect_ratio;
+  /// The original frames per second of the source. Default is 1.
+  float frames_per_second;
+  /// Time in milliseconds between the current and previous frame. Default is 0.
+  uint32_t frametime_delta;
 } frame_d3d11_opt_t;
 #endif
 
@@ -434,6 +492,18 @@ typedef struct frame_d3d9_opt_t {
   uint32_t total_subframes;
   /// The current sub frame. Default is 1.
   uint32_t current_subframe;
+  /// The expected aspect ratio of the source image.
+  ///
+  /// This can differ from the actual aspect ratio of the source
+  /// image.
+  ///
+  /// The default is 0, which will automatically
+  /// infer the ratio from the source image.
+  float aspect_ratio;
+  /// The original frames per second of the source. Default is 1.
+  float frames_per_second;
+  /// Time in milliseconds between the current and previous frame. Default is 0.
+  uint32_t frametime_delta;
 } frame_d3d9_opt_t;
 #endif
 
@@ -524,6 +594,18 @@ typedef struct frame_d3d12_opt_t {
   uint32_t total_subframes;
   /// The current sub frame. Default is 1.
   uint32_t current_subframe;
+  /// The expected aspect ratio of the source image.
+  ///
+  /// This can differ from the actual aspect ratio of the source
+  /// image.
+  ///
+  /// The default is 0, which will automatically
+  /// infer the ratio from the source image.
+  float aspect_ratio;
+  /// The original frames per second of the source. Default is 1.
+  float frames_per_second;
+  /// Time in milliseconds between the current and previous frame. Default is 0.
+  uint32_t frametime_delta;
 } frame_d3d12_opt_t;
 #endif
 
@@ -558,6 +640,18 @@ typedef struct frame_mtl_opt_t {
   uint32_t total_subframes;
   /// The current sub frame. Default is 1.
   uint32_t current_subframe;
+  /// The expected aspect ratio of the source image.
+  ///
+  /// This can differ from the actual aspect ratio of the source
+  /// image.
+  ///
+  /// The default is 0, which will automatically
+  /// infer the ratio from the source image.
+  float aspect_ratio;
+  /// The original frames per second of the source. Default is 1.
+  float frames_per_second;
+  /// Time in milliseconds between the current and previous frame. Default is 0.
+  uint32_t frametime_delta;
 } frame_mtl_opt_t;
 #endif
 
@@ -607,6 +701,13 @@ typedef libra_error_t (*PFN_libra_preset_free_runtime_params)(struct libra_prese
 ///libra_preset_create_with_context
 typedef libra_error_t (*PFN_libra_preset_create_with_context)(const char *filename,
                                                               libra_preset_ctx_t *context,
+                                                              libra_shader_preset_t *out);
+
+/// Function pointer definition for
+///libra_preset_create_with_options
+typedef libra_error_t (*PFN_libra_preset_create_with_options)(const char *filename,
+                                                              libra_preset_ctx_t *context,
+                                                              struct libra_preset_opt_t *options,
                                                               libra_shader_preset_t *out);
 
 /// Function pointer definition for
@@ -1082,7 +1183,10 @@ typedef libra_error_t (*PFN_libra_mtl_filter_chain_free)(libra_mtl_filter_chain_
 ///     - Added rotation, total_subframes, current_subframes to frame options
 ///     - Added preset context API
 ///     - Added Metal runtime API
-#define LIBRASHADER_CURRENT_VERSION 1
+/// - API version 2: 0.6.0
+///     - Added original aspect uniforms
+///     - Added frame time uniforms
+#define LIBRASHADER_CURRENT_VERSION 2
 
 /// The current version of the librashader ABI.
 /// Used by the loader to check ABI compatibility.
@@ -1149,6 +1253,7 @@ int32_t libra_error_free_string(char **out);
 
 /// Load a preset.
 ///
+/// This function is deprecated, and `libra_preset_create_with_options` should be used instead.
 /// ## Safety
 ///  - `filename` must be either null or a valid, aligned pointer to a string path to the shader preset.
 ///  - `out` must be either null, or an aligned pointer to an uninitialized or invalid `libra_shader_preset_t`.
@@ -1163,6 +1268,8 @@ libra_error_t libra_preset_create(const char *filename,
 /// the preset is created.
 ///
 /// Path information variables `PRESET_DIR` and `PRESET` will automatically be filled in.
+///
+/// This function is deprecated, and `libra_preset_create_with_options` should be used instead.
 /// ## Safety
 ///  - `filename` must be either null or a valid, aligned pointer to a string path to the shader preset.
 ///  - `context` must be either null or a valid, aligned pointer to a initialized `libra_preset_ctx_t`.
@@ -1172,6 +1279,30 @@ libra_error_t libra_preset_create(const char *filename,
 ///  - If any parameters are null, `out` is unchanged, and this function returns `LIBRA_ERR_INVALID_PARAMETER`.
 libra_error_t libra_preset_create_with_context(const char *filename,
                                                libra_preset_ctx_t *context,
+                                               libra_shader_preset_t *out);
+
+/// Load a preset with optional options and an optional context.
+///
+/// Both `context` and `options` may be null.
+///
+/// If `context` is null, then a default context will be provided, and this function will not return `LIBRA_ERR_INVALID_PARAMETER`.
+/// If `options` is null, then default options will be chosen.
+///
+/// If `context` is provided, it is immediately invalidated and must be recreated after
+/// the preset is created.
+///
+/// ## Safety
+///  - `filename` must be either null or a valid, aligned pointer to a string path to the shader preset.
+///  - `context` must be either null or a valid, aligned pointer to an initialized `libra_preset_ctx_t`.
+///  - `options` must be either null, or a valid, aligned pointer to a `libra_shader_opt_t`.
+///    `LIBRASHADER_API_VERSION` should be set to `LIBRASHADER_CURRENT_VERSION`.
+///  - `out` must be either null, or an aligned pointer to an uninitialized or invalid `libra_shader_preset_t`.
+///
+/// ## Returns
+///  - If `out` or `filename` is null, `out` is unchanged, and this function returns `LIBRA_ERR_INVALID_PARAMETER`.
+libra_error_t libra_preset_create_with_options(const char *filename,
+                                               libra_preset_ctx_t *context,
+                                               struct libra_preset_opt_t *options,
                                                libra_shader_preset_t *out);
 
 /// Free the preset.

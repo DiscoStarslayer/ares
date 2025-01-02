@@ -4,15 +4,15 @@ use winit::{
     window::{Window, WindowBuilder},
 };
 
+use librashader_common::shader_features::ShaderFeatures;
 use librashader_common::{Size, Viewport};
 use librashader_presets::ShaderPreset;
 use librashader_runtime_wgpu::FilterChainWgpu;
+#[cfg(target_arch = "wasm32")]
+use wasm_bindgen::prelude::*;
 use wgpu::util::DeviceExt;
 use winit::event_loop::EventLoopBuilder;
 use winit::platform::windows::EventLoopBuilderExtWindows;
-
-#[cfg(target_arch = "wasm32")]
-use wasm_bindgen::prelude::*;
 
 #[repr(C)]
 #[derive(Clone, Copy, Debug, bytemuck::Pod, bytemuck::Zeroable)]
@@ -124,8 +124,11 @@ impl<'a> State<'a> {
         //
         // let preset = ShaderPreset::try_parse("../test/basic.slangp").unwrap();
         //
-        let preset =
-            ShaderPreset::try_parse("../test/shaders_slang/crt/crt-royale.slangp").unwrap();
+        let preset = ShaderPreset::try_parse(
+            "../test/shaders_slang/motionblur/mix_frames.slangp",
+            ShaderFeatures::NONE,
+        )
+        .unwrap();
 
         // let preset =
         //     ShaderPreset::try_parse("../test/shaders_slang/crt/crt-royale.slangp").unwrap();
@@ -153,13 +156,13 @@ impl<'a> State<'a> {
             layout: Some(&render_pipeline_layout),
             vertex: wgpu::VertexState {
                 module: &shader,
-                entry_point: "vs_main",
+                entry_point: Some("vs_main"),
                 compilation_options: Default::default(),
                 buffers: &[Vertex::desc()],
             },
             fragment: Some(wgpu::FragmentState {
                 module: &shader,
-                entry_point: "fs_main",
+                entry_point: Some("fs_main"),
                 compilation_options: Default::default(),
                 targets: &[Some(wgpu::ColorTargetState {
                     format: config.format,

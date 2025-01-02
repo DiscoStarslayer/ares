@@ -41,7 +41,7 @@
 //! | Direct3D 11 | ✅        | `d3d11`                   |
 //! | Direct3D 12 | ✅        | `d3d12`                   |
 //! | Metal       | ✅        | `metal`                   |
-//! | wgpu        | 🆗         | `wgpu`                    |
+//! | wgpu        | ✅        | `wgpu`                    |
 //!
 //! ✅ Full Support &mdash; 🆗 Secondary Support
 //!
@@ -80,7 +80,7 @@ pub mod presets {
             .passes
             .iter()
             .map(|s| {
-                ShaderSource::load(&s.path)
+                ShaderSource::load(&s.path, preset.features)
                     .map(|s| s.parameters.into_iter().map(|(_, v)| v).collect())
             })
             .collect();

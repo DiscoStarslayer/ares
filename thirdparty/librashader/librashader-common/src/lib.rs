@@ -35,6 +35,7 @@ mod viewport;
 
 #[doc(hidden)]
 pub mod map;
+pub mod shader_features;
 
 pub use viewport::Viewport;
 
@@ -202,6 +203,14 @@ impl<T> Size<T> {
     /// Create a new `Size<T>` with the given width and height.
     pub fn new(width: T, height: T) -> Self {
         Size { width, height }
+    }
+}
+
+impl<T: AsPrimitive<f32>> Size<T> {
+    /// Get the aspect ratio of the size.
+    #[inline(always)]
+    pub fn aspect_ratio(&self) -> f32 {
+        self.width.as_() / self.height.as_()
     }
 }
 

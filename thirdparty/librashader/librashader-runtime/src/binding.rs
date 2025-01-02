@@ -7,6 +7,7 @@ use librashader_reflect::reflect::semantics::{
     BindingMeta, MemberOffset, Semantic, TextureBinding, TextureSemantics, UniformBinding,
     UniformMeta, UniqueSemantics,
 };
+use num_traits::Zero;
 use std::ops::{Deref, DerefMut};
 
 /// Trait for input textures used during uniform binding,
@@ -62,6 +63,12 @@ pub struct UniformInputs<'a> {
     pub current_subframe: u32,
     /// FrameDirection
     pub frame_direction: i32,
+    /// OriginalAspectRatio (need to normalize)
+    pub aspect_ratio: f32,
+    /// OriginalFPS
+    pub frames_per_second: f32,
+    /// FrameTimeDelta
+    pub frametime_delta: u32,
     /// OutputSize
     pub framebuffer_size: Size<u32>,
     /// FinalViewportSize
@@ -202,6 +209,46 @@ where
                 offset.context(),
                 device,
             );
+        }
+
+        // bind OriginalFPS
+        if let Some(offset) = uniform_bindings.get(&UniqueSemantics::OriginalFPS.into()) {
+            uniform_storage.bind_scalar(
+                offset.offset(),
+                uniform_inputs.frames_per_second,
+                offset.context(),
+                device,
+            );
+        }
+
+        // bind FrameTimeDelta
+        if let Some(offset) = uniform_bindings.get(&UniqueSemantics::FrameTimeDelta.into()) {
+            uniform_storage.bind_scalar(
+                offset.offset(),
+                uniform_inputs.frametime_delta,
+                offset.context(),
+                device,
+            );
+        }
+
+        let mut aspect_ratio = uniform_inputs.aspect_ratio;
+        if aspect_ratio.is_zero() {
+            aspect_ratio = original.size().aspect_ratio();
+        }
+
+        // bind OriginalAspect
+        if let Some(offset) = uniform_bindings.get(&UniqueSemantics::OriginalAspect.into()) {
+            uniform_storage.bind_scalar(offset.offset(), aspect_ratio, offset.context(), device);
+        }
+
+        if let Some(offset) = uniform_bindings.get(&UniqueSemantics::OriginalAspectRotated.into()) {
+            let rotated_aspect = if uniform_inputs.rotation == 1 || uniform_inputs.rotation == 3 {
+                1.0f32 / aspect_ratio
+            } else {
+                aspect_ratio
+            };
+
+            uniform_storage.bind_scalar(offset.offset(), rotated_aspect, offset.context(), device);
         }
 
         // bind Original sampler
@@ -348,6 +395,7 @@ where
     }
 }
 
+#[derive(Debug)]
 pub struct BindingRequirements {
     pub(crate) required_history: usize,
     pub(crate) uses_final_pass_as_feedback: bool,
@@ -468,6 +516,17 @@ macro_rules! impl_default_frame_options {
             pub total_subframes: u32,
             /// The current sub frame. Default is 1.
             pub current_subframe: u32,
+            /// The expected aspect ratio of the source image.
+            ///
+            /// This can differ from the actual aspect ratio of the source
+            /// image.
+            ///
+            /// The default is 0 which will automatically infer the ratio from the source image.
+            pub aspect_ratio: f32,
+            /// The original frames per second of the source. Default is 1.
+            pub frames_per_second: f32,
+            /// Time in milliseconds between the current and previous frame. Default is 0.
+            pub frametime_delta: u32,
         }
 
         impl Default for $ty {
@@ -478,6 +537,9 @@ macro_rules! impl_default_frame_options {
                     rotation: 0,
                     total_subframes: 1,
                     current_subframe: 1,
+                    aspect_ratio: 0.0,
+                    frametime_delta: 0,
+                    frames_per_second: 1.0,
                 }
             }
         }
