@@ -15,7 +15,10 @@ auto Program::identify(const string& filename) -> shared_pointer<Emulator> {
 
 //location is an optional game to load automatically (for command-line loading)
 auto Program::load(shared_pointer<Emulator> emulator, string location) -> bool {
-  unload();
+  dispatch_queue_t queue = Application::getQueue();
+  dispatch_sync(queue, ^{
+    unload();
+  });
 
   ::emulator = emulator;
 
@@ -33,6 +36,7 @@ auto Program::load(shared_pointer<Emulator> emulator, string location) -> bool {
 }
 
 auto Program::load(string location) -> bool {
+  loaded = false;
   if(settings.debugServer.enabled) {
     nall::GDB::server.reset();
   }
@@ -90,11 +94,16 @@ auto Program::load(string location) -> bool {
   settings.recent.game[0] = {emulator->name, ";", location};
   presentation.loadEmulators();
 
+  loaded = true;
   return true;
 }
 
 auto Program::unload() -> void {
-  if(!emulator) return;
+  unloading = true;
+  if(!emulator) {
+    unloading = false;
+    return;
+  }
 
   nall::GDB::server.close();
   nall::GDB::server.reset();
@@ -120,4 +129,5 @@ auto Program::unload() -> void {
   message.text = "";
   ruby::video.clear();
   ruby::audio.clear();
+  unloading = false;
 }

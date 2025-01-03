@@ -1,4 +1,5 @@
 #include "../desktop-ui.hpp"
+#include <dispatch/dispatch.h>
 namespace Instances { Instance<Presentation> presentation; }
 Presentation& presentation = Instances::presentation();
 
@@ -19,7 +20,9 @@ Presentation::Presentation() {
     item.setText({multiplier, "x"});
     item.onActivate([=] {
       settings.video.multiplier = multiplier;
-      resizeWindow();
+      dispatch_async(dispatch_get_main_queue(), ^{
+        resizeWindow();
+      });
     });
 
     videoSizeGroup.append(item);
@@ -32,7 +35,9 @@ Presentation::Presentation() {
   videoSizeMenu.append(MenuSeparator());
   MenuItem centerWindow{&videoSizeMenu};
   centerWindow.setText("Center Window").setIcon(Icon::Place::Settings).onActivate([&] {
-    setAlignment(Alignment::Center);
+    dispatch_async(dispatch_get_main_queue(), ^{
+      setAlignment(Alignment::Center);
+    });
   });
   videoOutputMenu.setText("Output").setIcon(Icon::Emblem::Image);
   videoOutputPixelPerfect.setText("Pixel Perfect").onActivate([&] {
@@ -59,13 +64,19 @@ Presentation::Presentation() {
 
   videoAspectCorrection.setText("Aspect Correction").setChecked(settings.video.aspectCorrection).onToggle([&] {
     settings.video.aspectCorrection = videoAspectCorrection.checked();
-    if(settings.video.adaptiveSizing) resizeWindow();
+    dispatch_async(dispatch_get_main_queue(), ^{
+      if(settings.video.adaptiveSizing) resizeWindow();
+    });
   });
   videoAdaptiveSizing.setText("Adaptive Sizing").setChecked(settings.video.adaptiveSizing).onToggle([&] {
-    if(settings.video.adaptiveSizing = videoAdaptiveSizing.checked()) resizeWindow();
+    dispatch_async(dispatch_get_main_queue(), ^{
+      if(settings.video.adaptiveSizing = videoAdaptiveSizing.checked()) resizeWindow();
+    });
   });
   videoAutoCentering.setText("Auto Centering").setChecked(settings.video.autoCentering).onToggle([&] {
-    if(settings.video.autoCentering = videoAutoCentering.checked()) resizeWindow();
+    dispatch_async(dispatch_get_main_queue(), ^{
+      if(settings.video.autoCentering = videoAutoCentering.checked()) resizeWindow();
+    });
   });
   videoShaderMenu.setText("Shader").setIcon(Icon::Emblem::Image);
   loadShaders();
@@ -93,42 +104,64 @@ Presentation::Presentation() {
   });
   showStatusBarSetting.setText("Show Status Bar").setChecked(settings.general.showStatusBar).onToggle([&] {
     settings.general.showStatusBar = showStatusBarSetting.checked();
-    if(!showStatusBarSetting.checked()) {
-      layout.remove(statusLayout);
-    } else {
-      layout.append(statusLayout, Size{~0, StatusHeight});
-    }
-    if(visible()) resizeWindow();
+    dispatch_async(dispatch_get_main_queue(), ^{
+      if(!showStatusBarSetting.checked()) {
+        layout.remove(statusLayout);
+      } else {
+        layout.append(statusLayout, Size{~0, StatusHeight});
+      }
+      if(visible()) resizeWindow();
+    });
   }).doToggle();
   videoSettingsAction.setText("Video" ELLIPSIS).setIcon(Icon::Device::Display).onActivate([&] {
-    settingsWindow.show("Video");
+    dispatch_async(dispatch_get_main_queue(), ^{
+      settingsWindow.show("Video");
+    });
   });
   audioSettingsAction.setText("Audio" ELLIPSIS).setIcon(Icon::Device::Speaker).onActivate([&] {
-    settingsWindow.show("Audio");
+    dispatch_async(dispatch_get_main_queue(), ^{
+      settingsWindow.show("Audio");
+    });
   });
   inputSettingsAction.setText("Input" ELLIPSIS).setIcon(Icon::Device::Joypad).onActivate([&] {
-    settingsWindow.show("Input");
+    dispatch_async(dispatch_get_main_queue(), ^{
+      settingsWindow.show("Input");
+    });
   });
   hotkeySettingsAction.setText("Hotkeys" ELLIPSIS).setIcon(Icon::Device::Keyboard).onActivate([&] {
-    settingsWindow.show("Hotkeys");
+    dispatch_async(dispatch_get_main_queue(), ^{
+      settingsWindow.show("Hotkeys");
+    });
   });
   emulatorSettingsAction.setText("Emulators" ELLIPSIS).setIcon(Icon::Place::Server).onActivate([&] {
-    settingsWindow.show("Emulators");
+    dispatch_async(dispatch_get_main_queue(), ^{
+      settingsWindow.show("Emulators");
+    });
   });
   optionSettingsAction.setText("Options" ELLIPSIS).setIcon(Icon::Action::Settings).onActivate([&] {
-    settingsWindow.show("Options");
+    dispatch_async(dispatch_get_main_queue(), ^{
+      settingsWindow.show("Options");
+    });
   });
   firmwareSettingsAction.setText("Firmware" ELLIPSIS).setIcon(Icon::Emblem::Binary).onActivate([&] {
-    settingsWindow.show("Firmware");
+    dispatch_async(dispatch_get_main_queue(), ^{
+      settingsWindow.show("Firmware");
+    });
   });
   pathSettingsAction.setText("Paths" ELLIPSIS).setIcon(Icon::Emblem::Folder).onActivate([&] {
-    settingsWindow.show("Paths");
+    dispatch_async(dispatch_get_main_queue(), ^{
+      settingsWindow.show("Paths");
+    });
   });
   driverSettingsAction.setText("Drivers" ELLIPSIS).setIcon(Icon::Place::Settings).onActivate([&] {
-    settingsWindow.show("Drivers");
+    dispatch_async(dispatch_get_main_queue(), ^{
+      settingsWindow.show("Drivers");
+    });
   });
   debugSettingsAction.setText("Debug" ELLIPSIS).setIcon(Icon::Device::Network).onActivate([&] {
-    settingsWindow.show("Debug");
+    dispatch_async(dispatch_get_main_queue(), ^{
+      settingsWindow.show("Debug");
+    });
   });
 
   toolsMenu.setVisible(false).setText("Tools");
@@ -136,29 +169,37 @@ Presentation::Presentation() {
   for(u32 slot : range(9)) {
     MenuItem item{&saveStateMenu};
     item.setText({"Slot ", 1 + slot}).onActivate([=] {
-      if(program.stateSave(1 + slot)) {
-        undoSaveStateMenu.setEnabled(true);
-      }
+      dispatch_async(dispatch_get_main_queue(), ^{
+        if(program.stateSave(1 + slot)) {
+          undoSaveStateMenu.setEnabled(true);
+        }
+      });
     });
   }
   loadStateMenu.setText("Load State").setIcon(Icon::Media::Rewind);
   for(u32 slot : range(9)) {
     MenuItem item{&loadStateMenu};
     item.setText({"Slot ", 1 + slot}).onActivate([=] {
-      if(program.stateLoad(1 + slot)) {
-        undoLoadStateMenu.setEnabled(true);
-      }
+      dispatch_async(dispatch_get_main_queue(), ^{
+        if(program.stateLoad(1 + slot)) {
+          undoLoadStateMenu.setEnabled(true);
+        }
+      });
     });
   }
   undoSaveStateMenu.setText("Undo Last Save State").setIcon(Icon::Edit::Undo).setEnabled(false);
   undoSaveStateMenu.onActivate([&] {
-    program.undoStateSave();
-    undoSaveStateMenu.setEnabled(false);
+    dispatch_async(dispatch_get_main_queue(), ^{
+      program.undoStateSave();
+      undoSaveStateMenu.setEnabled(false);
+    });
   });
   undoLoadStateMenu.setText("Undo Last Load State").setIcon(Icon::Edit::Undo).setEnabled(false);
   undoLoadStateMenu.onActivate([&] {
-    program.undoStateLoad();
-    undoLoadStateMenu.setEnabled(false);
+    dispatch_async(dispatch_get_main_queue(), ^{
+      program.undoStateLoad();
+      undoLoadStateMenu.setEnabled(false);
+    });
   });
   captureScreenshot.setText("Capture Screenshot").setIcon(Icon::Emblem::Image).onActivate([&] {
     program.requestScreenshot = true;
@@ -174,40 +215,56 @@ Presentation::Presentation() {
     program.requestFrameAdvance = true;
   });
   manifestViewerAction.setText("Manifest").setIcon(Icon::Emblem::Binary).onActivate([&] {
-    toolsWindow.show("Manifest");
+    dispatch_async(dispatch_get_main_queue(), ^{
+      toolsWindow.show("Manifest");
+    });
   });
   cheatEditorAction.setText("Cheats").setIcon(Icon::Emblem::File).onActivate([&] {
-    toolsWindow.show("Cheats");
+    dispatch_async(dispatch_get_main_queue(), ^{
+      toolsWindow.show("Cheats");
+    });
   });
   memoryEditorAction.setText("Memory").setIcon(Icon::Device::Storage).onActivate([&] {
-    toolsWindow.show("Memory");
+    dispatch_async(dispatch_get_main_queue(), ^{
+      toolsWindow.show("Memory");
+    });
   });
   graphicsViewerAction.setText("Graphics").setIcon(Icon::Emblem::Image).onActivate([&] {
-    toolsWindow.show("Graphics");
+    dispatch_async(dispatch_get_main_queue(), ^{
+      toolsWindow.show("Graphics");
+    });
   });
   streamManagerAction.setText("Streams").setIcon(Icon::Emblem::Audio).onActivate([&] {
-    toolsWindow.show("Streams");
+    dispatch_async(dispatch_get_main_queue(), ^{
+      toolsWindow.show("Streams");
+    });
   });
   propertiesViewerAction.setText("Properties").setIcon(Icon::Emblem::Text).onActivate([&] {
-    toolsWindow.show("Properties");
+    dispatch_async(dispatch_get_main_queue(), ^{
+      toolsWindow.show("Properties");
+    });
   });
   traceLoggerAction.setText("Tracer").setIcon(Icon::Emblem::Script).onActivate([&] {
-    toolsWindow.show("Tracer");
+    dispatch_async(dispatch_get_main_queue(), ^{
+      toolsWindow.show("Tracer");
+    });
   });
 
   helpMenu.setText("Help");
   aboutAction.setText("About" ELLIPSIS).setIcon(Icon::Prompt::Question).onActivate([&] {
-    multiFactorImage logo(Resource::Ares::Logo1x, Resource::Ares::Logo2x);
-    AboutDialog()
-    .setName(ares::Name)
-    .setLogo(logo)
-    .setDescription({ares::Name, " — a simplified multi-system emulator"})
-    .setVersion(ares::Version)
-    .setCopyright(ares::Copyright)
-    .setLicense(ares::License, ares::LicenseURI)
-    .setWebsite(ares::Website, ares::WebsiteURI)
-    .setAlignment(presentation)
-    .show();
+    dispatch_async(dispatch_get_main_queue(), ^{
+      multiFactorImage logo(Resource::Ares::Logo1x, Resource::Ares::Logo2x);
+      AboutDialog()
+        .setName(ares::Name)
+        .setLogo(logo)
+        .setDescription({ares::Name, " — a simplified multi-system emulator"})
+        .setVersion(ares::Version)
+        .setCopyright(ares::Copyright)
+        .setLicense(ares::License, ares::LicenseURI)
+        .setWebsite(ares::Website, ares::WebsiteURI)
+        .setAlignment(presentation)
+        .show();
+    });
   });
 
   viewport.setDroppable().onDrop([&](auto filenames) {
@@ -267,10 +324,12 @@ Presentation::Presentation() {
   setVisible();
 
   #if defined(PLATFORM_MACOS)
-  Application::Cocoa::onAbout([&] { aboutAction.doActivate(); });
-  Application::Cocoa::onActivate([&] { setFocused(); });
-  Application::Cocoa::onPreferences([&] { settingsWindow.show("Video"); });
-  Application::Cocoa::onQuit([&] { doClose(); });
+  dispatch_async(dispatch_get_main_queue(), ^{
+    Application::Cocoa::onAbout([&] { aboutAction.doActivate(); });
+    Application::Cocoa::onActivate([&] { setFocused(); });
+    Application::Cocoa::onPreferences([&] { settingsWindow.show("Video"); });
+    Application::Cocoa::onQuit([&] { doClose(); });
+  });
   #endif
 }
 
@@ -323,472 +382,483 @@ auto Presentation::resizeWindow() -> void {
 }
 
 auto Presentation::loadEmulators() -> void {
-  loadMenu.reset();
-
-  //clean up the recent games history first
-  vector<string> recentGames;
-  for(u32 index : range(9)) {
-    auto entry = settings.recent.game[index];
-    auto system = entry.split(";", 1L)(0);
-    auto location = entry.split(";", 1L)(1);
-    if(location.length()) {  //remove missing games
-      if(!recentGames.find(entry)) {  //remove duplicate entries
-        recentGames.append(entry);
-      }
-    }
-    settings.recent.game[index] = {};
-  }
-
-  //build recent games list
-  u32 count = 0;
-  for(auto& game : recentGames) {
-    settings.recent.game[count++] = game;
-  }
-  { Menu recentGames{&loadMenu};
-    recentGames.setIcon(Icon::Action::Open);
-    recentGames.setText("Recent Games");
-    for(u32 index : range(count)) {
-      MenuItem item{&recentGames};
+  dispatch_async(dispatch_get_main_queue(), ^{
+    loadMenu.reset();
+    
+    //clean up the recent games history first
+    vector<string> recentGames;
+    for(u32 index : range(9)) {
       auto entry = settings.recent.game[index];
       auto system = entry.split(";", 1L)(0);
       auto location = entry.split(";", 1L)(1);
-      item.setIconForFile(location);
-      item.setText({Location::base(location).trimRight("/"), " (", system, ")"});
-      item.onActivate([=] {
-        if(!inode::exists(location)) {
-          MessageDialog()
-            .setTitle("Error")
-            .setText({location, " does not exist"})
-            .setAlignment(presentation)
-            .error();
-
-          //remove the entry from the recent games list
-          settings.recent.game[index] = {};
-          loadEmulators();
-          return;
-        }
-        for(auto& emulator : emulators) {
-          if(emulator->name == system) {
-            return (void)program.load(emulator, location);
-          }
-        }
-      });
-    }
-    if(count > 0) {
-      recentGames.append(MenuSeparator());
-      MenuItem clearHistory{&recentGames};
-      clearHistory.setIcon(Icon::Edit::Clear);
-      #if !defined(PLATFORM_MACOS)
-      clearHistory.setText("Clear History");
-      #else
-      clearHistory.setText("Clear Menu");
-      #endif
-      clearHistory.onActivate([&] {
-        for(u32 index : range(9)) settings.recent.game[index] = {};
-        loadEmulators();
-      });
-    } else {
-      recentGames.setEnabled(false);
-    }
-  }
-  loadMenu.append(MenuSeparator());
-
-  //build emulator load list
-  u32 enabled = 0;
-
-  //first pass; make sure "Arcade" is start of list
-  for(auto& emulator : emulators) {
-    if(!emulator->configuration.visible) continue;
-    if(emulator->group() == "Arcade") {
-      Menu menu;
-      menu.setIcon(Icon::Emblem::Folder);
-      menu.setText(emulator->group());
-      loadMenu.append(menu);
-      break;
-    }
-  }
-
-  for(auto& emulator : emulators) {
-    if (!emulator->configuration.visible) continue;
-    enabled++;
-    MenuItem item;
-    item.setIcon(Icon::Place::Server);
-    item.setText({emulator->name, ELLIPSIS});
-    item.setVisible(emulator->configuration.visible);
-    item.onActivate([=] {
-      program.load(emulator);
-    });
-
-    Menu menu;
-    for(auto& action : loadMenu.actions()) {
-      if(auto group = action.cast<Menu>()) {
-        if(group.text() == emulator->group()) {
-          menu = group;
-          break;
+      if(location.length()) {  //remove missing games
+        if(!recentGames.find(entry)) {  //remove duplicate entries
+          recentGames.append(entry);
         }
       }
+      settings.recent.game[index] = {};
     }
-    if(!menu) {
-      menu.setIcon(Icon::Emblem::Folder);
-      menu.setText(emulator->group());
-      loadMenu.append(menu);
+    
+    //build recent games list
+    u32 count = 0;
+    for(auto& game : recentGames) {
+      settings.recent.game[count++] = game;
     }
-    menu.append(item);
-  }
-  if(enabled == 0) {
-    //if the user disables every system, give an indication for how to re-add systems to the load menu
-    MenuItem item{&loadMenu};
-    item.setIcon(Icon::Action::Add);
-    item.setText("Add Systems" ELLIPSIS);
-    item.onActivate([&] {
-      settingsWindow.show("Emulators");
-    });
-  }
-
-  #if !defined(PLATFORM_MACOS)
-  loadMenu.append(MenuSeparator());
-
-  { MenuItem quit{&loadMenu};
-    quit.setIcon(Icon::Action::Quit);
-    quit.setText("Quit");
-    quit.onActivate([&] {
-      program.quit();
-    });
-  }
-  #endif
+    { Menu recentGames{&loadMenu};
+      recentGames.setIcon(Icon::Action::Open);
+      recentGames.setText("Recent Games");
+      for(u32 index : range(count)) {
+        MenuItem item{&recentGames};
+        auto entry = settings.recent.game[index];
+        auto system = entry.split(";", 1L)(0);
+        auto location = entry.split(";", 1L)(1);
+        item.setIconForFile(location);
+        item.setText({Location::base(location).trimRight("/"), " (", system, ")"});
+        item.onActivate([=] {
+          if(!inode::exists(location)) {
+            MessageDialog()
+              .setTitle("Error")
+              .setText({location, " does not exist"})
+              .setAlignment(presentation)
+              .error();
+            
+            //remove the entry from the recent games list
+            settings.recent.game[index] = {};
+            loadEmulators();
+            return;
+          }
+          for(auto& emulator : emulators) {
+            if(emulator->name == system) {
+              return (void)program.load(emulator, location);
+            }
+          }
+        });
+      }
+      if(count > 0) {
+        recentGames.append(MenuSeparator());
+        MenuItem clearHistory{&recentGames};
+        clearHistory.setIcon(Icon::Edit::Clear);
+#if !defined(PLATFORM_MACOS)
+        clearHistory.setText("Clear History");
+#else
+        clearHistory.setText("Clear Menu");
+#endif
+        clearHistory.onActivate([&] {
+          for(u32 index : range(9)) settings.recent.game[index] = {};
+          loadEmulators();
+        });
+      } else {
+        recentGames.setEnabled(false);
+      }
+    }
+    loadMenu.append(MenuSeparator());
+    
+    //build emulator load list
+    u32 enabled = 0;
+    
+    //first pass; make sure "Arcade" is start of list
+    for(auto& emulator : emulators) {
+      if(!emulator->configuration.visible) continue;
+      if(emulator->group() == "Arcade") {
+        Menu menu;
+        menu.setIcon(Icon::Emblem::Folder);
+        menu.setText(emulator->group());
+        loadMenu.append(menu);
+        break;
+      }
+    }
+    
+    for(auto& emulator : emulators) {
+      if (!emulator->configuration.visible) continue;
+      enabled++;
+      MenuItem item;
+      item.setIcon(Icon::Place::Server);
+      item.setText({emulator->name, ELLIPSIS});
+      item.setVisible(emulator->configuration.visible);
+      item.onActivate([=] {
+        program.load(emulator);
+      });
+      
+      Menu menu;
+      for(auto& action : loadMenu.actions()) {
+        if(auto group = action.cast<Menu>()) {
+          if(group.text() == emulator->group()) {
+            menu = group;
+            break;
+          }
+        }
+      }
+      if(!menu) {
+        menu.setIcon(Icon::Emblem::Folder);
+        menu.setText(emulator->group());
+        loadMenu.append(menu);
+      }
+      menu.append(item);
+    }
+    if(enabled == 0) {
+      //if the user disables every system, give an indication for how to re-add systems to the load menu
+      MenuItem item{&loadMenu};
+      item.setIcon(Icon::Action::Add);
+      item.setText("Add Systems" ELLIPSIS);
+      item.onActivate([&] {
+        settingsWindow.show("Emulators");
+      });
+    }
+    
+#if !defined(PLATFORM_MACOS)
+    loadMenu.append(MenuSeparator());
+    
+    { MenuItem quit{&loadMenu};
+      quit.setIcon(Icon::Action::Quit);
+      quit.setText("Quit");
+      quit.onActivate([&] {
+        program.quit();
+      });
+    }
+#endif
+  });
 }
 
 auto Presentation::loadEmulator() -> void {
-  setTitle(emulator->root->game());
-  setAssociatedFile(emulator->game->location);
-  systemMenu.setText(emulator->name);
-  systemMenu.setVisible();
-
-  refreshSystemMenu();
-
-  toolsMenu.setVisible(true);
-  pauseEmulation.setChecked(false);
-
-  setFocused();
-  viewport.setFocused();
+  dispatch_async(dispatch_get_main_queue(), ^{
+    setTitle(emulator->root->game());
+    setAssociatedFile(emulator->game->location);
+    systemMenu.setText(emulator->name);
+    systemMenu.setVisible();
+    
+    refreshSystemMenu();
+    
+    toolsMenu.setVisible(true);
+    pauseEmulation.setChecked(false);
+    
+    setFocused();
+    viewport.setFocused();
+  });
 }
 
 auto Presentation::refreshSystemMenu() -> void {
-  systemMenu.reset();
-
-  //allow each emulator core to create any specialized menus necessary:
-  //for instance, floppy disk and CD-ROM swapping support.
-  emulator->load(systemMenu);
-  if(systemMenu.actionCount() > 0) systemMenu.append(MenuSeparator());
-
-  u32 portsFound = 0;
-  for(auto port : ares::Node::enumerate<ares::Node::Port>(emulator->root)) {
-    //do not add unsupported ports to the port menu
-    if(emulator->portBlacklist.find(port->name())) continue;
-
-    if(!port->hotSwappable()) continue;
-    if(port->type() != "Controller" && port->type() != "Expansion") continue;
-
-    portsFound++;
-    Menu portMenu{&systemMenu};
-    if(port->type() == "Controller") portMenu.setIcon(Icon::Device::Joypad);
-    if(port->type() == "Expansion" ) portMenu.setIcon(Icon::Device::Storage);
-    portMenu.setText(port->name());
-
-    Group peripheralGroup;
-    { MenuRadioItem peripheralItem{&portMenu};
-      peripheralItem.setAttribute<ares::Node::Port>("port", port);
-      peripheralItem.setText("Nothing");
-      peripheralItem.onActivate([=] {
-        auto port = peripheralItem.attribute<ares::Node::Port>("port");
-        port->disconnect();
-        refreshSystemMenu();
-      });
-      peripheralGroup.append(peripheralItem);
-    }
-    for(auto peripheral : port->supported()) {
-      //do not add unsupported peripherals to the peripheral port menu
-      if(emulator->inputBlacklist.find(peripheral)) continue;
-
-      MenuRadioItem peripheralItem{&portMenu};
-      peripheralItem.setAttribute<ares::Node::Port>("port", port);
-      peripheralItem.setText(peripheral);
-      peripheralItem.onActivate([=] {
-        auto port = peripheralItem.attribute<ares::Node::Port>("port");
-        port->disconnect();
-        port->allocate(peripheralItem.text());
-        port->connect();
-        refreshSystemMenu();
-      });
-      peripheralGroup.append(peripheralItem);
-    }
-
-    //check the peripheral item menu option that is currently connected to said port
-    if(auto connected = port->connected()) {
-      for(auto peripheralItem : peripheralGroup.objects<MenuRadioItem>()) {
-        if(peripheralItem.text() == connected->name()) peripheralItem.setChecked();
-      }
-    }
-
-    // Allow for additional paks for N64 gamepads
-    if((emulator->name == "Nintendo 64" || emulator->name == "Nintendo 64DD") 
-        && port->type() == "Controller") {
-      const string portNum = port->name()[port->name().length() - 1];    
+  dispatch_async(dispatch_get_main_queue(), ^{
+    systemMenu.reset();
+    //allow each emulator core to create any specialized menus necessary:
+    //for instance, floppy disk and CD-ROM swapping support.
+    emulator->load(systemMenu);
+    if(systemMenu.actionCount() > 0) systemMenu.append(MenuSeparator());
+    
+    u32 portsFound = 0;
+    for(auto port : ares::Node::enumerate<ares::Node::Port>(emulator->root)) {
+      //do not add unsupported ports to the port menu
+      if(emulator->portBlacklist.find(port->name())) continue;
       
-      // remove this check to enable pak menu option for all 4 controllers
-      if(portNum == "1") {
-
-        if(portMenu.actionCount() > 0) portMenu.append(MenuSeparator());
-        Menu pakMenu{&portMenu};
-        pakMenu.setText("Pak");
-        Group pakGroup;
-        MenuRadioItem nothing{&pakMenu};;
-        nothing.setText("Nothing");
-        nothing.setAttribute<ares::Node::Port>("port", port);
-        nothing.onActivate([=] { 
-          auto port = nothing.attribute<ares::Node::Port>("port");
-          const string portName = port->name();
-          if(auto port = emulator->root->find<ares::Node::Port>(portName)) {
-            port->disconnect();
-            auto peripheral = port->allocate("Gamepad");
-            port->connect();
-          }
+      if(!port->hotSwappable()) continue;
+      if(port->type() != "Controller" && port->type() != "Expansion") continue;
+      
+      portsFound++;
+      Menu portMenu{&systemMenu};
+      if(port->type() == "Controller") portMenu.setIcon(Icon::Device::Joypad);
+      if(port->type() == "Expansion" ) portMenu.setIcon(Icon::Device::Storage);
+      portMenu.setText(port->name());
+      
+      Group peripheralGroup;
+      { MenuRadioItem peripheralItem{&portMenu};
+        peripheralItem.setAttribute<ares::Node::Port>("port", port);
+        peripheralItem.setText("Nothing");
+        peripheralItem.onActivate([=] {
+          auto port = peripheralItem.attribute<ares::Node::Port>("port");
+          port->disconnect();
+          refreshSystemMenu();
         });
-        pakGroup.append(nothing);
-
-        MenuRadioItem cpak{&pakMenu};
-        cpak.setAttribute<ares::Node::Port>("port", port);
-        cpak.setText("Controller Pak");
-        cpak.onActivate([=] {  
-          auto port = cpak.attribute<ares::Node::Port>("port");
-          const string portName = port->name();
-          if(auto port = emulator->root->find<ares::Node::Port>(portName)) {
-            port->disconnect();
-            auto peripheral = port->allocate("Gamepad");
-            port->connect();
-            if(auto port = peripheral->find<ares::Node::Port>("Pak")) {
-              emulator->gamepad = mia::Pak::create("Nintendo 64");
-              emulator->gamepad->pak->append("save.pak", 32_KiB);
-              string pakExt = ".pak";
-              if(portNum != "1") { pakExt = string(".", portNum, ".pak");}
-              emulator->gamepad->load("save.pak", pakExt, emulator->game->location);
-              port->allocate("Controller Pak");
+        peripheralGroup.append(peripheralItem);
+      }
+      for(auto peripheral : port->supported()) {
+        //do not add unsupported peripherals to the peripheral port menu
+        if(emulator->inputBlacklist.find(peripheral)) continue;
+        
+        MenuRadioItem peripheralItem{&portMenu};
+        peripheralItem.setAttribute<ares::Node::Port>("port", port);
+        peripheralItem.setText(peripheral);
+        peripheralItem.onActivate([=] {
+          auto port = peripheralItem.attribute<ares::Node::Port>("port");
+          port->disconnect();
+          port->allocate(peripheralItem.text());
+          port->connect();
+          refreshSystemMenu();
+        });
+        peripheralGroup.append(peripheralItem);
+      }
+      
+      //check the peripheral item menu option that is currently connected to said port
+      if(auto connected = port->connected()) {
+        for(auto peripheralItem : peripheralGroup.objects<MenuRadioItem>()) {
+          if(peripheralItem.text() == connected->name()) peripheralItem.setChecked();
+        }
+      }
+      
+      // Allow for additional paks for N64 gamepads
+      if((emulator->name == "Nintendo 64" || emulator->name == "Nintendo 64DD")
+         && port->type() == "Controller") {
+        const string portNum = port->name()[port->name().length() - 1];
+        
+        // remove this check to enable pak menu option for all 4 controllers
+        if(portNum == "1") {
+          
+          if(portMenu.actionCount() > 0) portMenu.append(MenuSeparator());
+          Menu pakMenu{&portMenu};
+          pakMenu.setText("Pak");
+          Group pakGroup;
+          MenuRadioItem nothing{&pakMenu};;
+          nothing.setText("Nothing");
+          nothing.setAttribute<ares::Node::Port>("port", port);
+          nothing.onActivate([=] {
+            auto port = nothing.attribute<ares::Node::Port>("port");
+            const string portName = port->name();
+            if(auto port = emulator->root->find<ares::Node::Port>(portName)) {
+              port->disconnect();
+              auto peripheral = port->allocate("Gamepad");
               port->connect();
             }
-          }
-        });
-        pakGroup.append(cpak);
-
-        MenuRadioItem rpak{&pakMenu};
-        rpak.setAttribute<ares::Node::Port>("port", port);
-        rpak.setText("Rumble Pak");
-        rpak.onActivate([=] { 
-          auto port = rpak.attribute<ares::Node::Port>("port");
-          const string portName = port->name();
-          if(auto port = emulator->root->find<ares::Node::Port>(portName)) {
-            port->disconnect();
-            auto peripheral = port->allocate("Gamepad");
-            port->connect();
-            if(auto port = peripheral->find<ares::Node::Port>("Pak")) {
-              port->allocate("Rumble Pak");
+          });
+          pakGroup.append(nothing);
+          
+          MenuRadioItem cpak{&pakMenu};
+          cpak.setAttribute<ares::Node::Port>("port", port);
+          cpak.setText("Controller Pak");
+          cpak.onActivate([=] {
+            auto port = cpak.attribute<ares::Node::Port>("port");
+            const string portName = port->name();
+            if(auto port = emulator->root->find<ares::Node::Port>(portName)) {
+              port->disconnect();
+              auto peripheral = port->allocate("Gamepad");
               port->connect();
-            }
-          }
-        });
-        pakGroup.append(rpak);
-
-        MenuRadioItem tpak{&pakMenu};
-        tpak.setAttribute<ares::Node::Port>("port", port);
-        tpak.setText("Transfer Pak");
-        tpak.onActivate([=] { 
-          auto port = tpak.attribute<ares::Node::Port>("port");
-          const string portName = port->name();
-          if(auto port = emulator->root->find<ares::Node::Port>(portName)) {
-            port->disconnect();
-            auto peripheral = port->allocate("Gamepad");
-            port->connect();
-            if(auto port = peripheral->find<ares::Node::Port>("Pak")) {
-              #if defined(CORE_GB)
-              emulator->gb.reset();
-              auto transferPak = port->allocate("Transfer Pak");
-              port->connect();
-              
-              if(auto slot = transferPak->find<ares::Node::Port>("Cartridge Slot")) {
-                emulator->gb = mia::Medium::create("Game Boy");
-                string tmpPath;
-                if(emulator->gb->load(emulator->load(emulator->gb, tmpPath))) {
-                  slot->allocate();
-                  slot->connect();
-                } else {
-                  port->disconnect();
-                  emulator->gb.reset();
-                }
+              if(auto port = peripheral->find<ares::Node::Port>("Pak")) {
+                emulator->gamepad = mia::Pak::create("Nintendo 64");
+                emulator->gamepad->pak->append("save.pak", 32_KiB);
+                string pakExt = ".pak";
+                if(portNum != "1") { pakExt = string(".", portNum, ".pak");}
+                emulator->gamepad->load("save.pak", pakExt, emulator->game->location);
+                port->allocate("Controller Pak");
+                port->connect();
               }
-              #endif
             }
-          }
-        });
-        pakGroup.append(tpak);
-
-        // set currently enabled pak 
-        // Note: based on initialization routine in desktop-ui/emulator/nintendo-64.cpp & nintedo-64dd.cpp
-        if(emulator->game->pak->attribute("tpak").boolean() && portNum == "1") tpak.setChecked();
-        else if(emulator->game->pak->attribute("cpak").boolean() && portNum == "1") cpak.setChecked();
-        else if(emulator->game->pak->attribute("rpak").boolean()) rpak.setChecked();
-        else nothing.setChecked();
+          });
+          pakGroup.append(cpak);
+          
+          MenuRadioItem rpak{&pakMenu};
+          rpak.setAttribute<ares::Node::Port>("port", port);
+          rpak.setText("Rumble Pak");
+          rpak.onActivate([=] {
+            auto port = rpak.attribute<ares::Node::Port>("port");
+            const string portName = port->name();
+            if(auto port = emulator->root->find<ares::Node::Port>(portName)) {
+              port->disconnect();
+              auto peripheral = port->allocate("Gamepad");
+              port->connect();
+              if(auto port = peripheral->find<ares::Node::Port>("Pak")) {
+                port->allocate("Rumble Pak");
+                port->connect();
+              }
+            }
+          });
+          pakGroup.append(rpak);
+          
+          MenuRadioItem tpak{&pakMenu};
+          tpak.setAttribute<ares::Node::Port>("port", port);
+          tpak.setText("Transfer Pak");
+          tpak.onActivate([=] {
+            auto port = tpak.attribute<ares::Node::Port>("port");
+            const string portName = port->name();
+            if(auto port = emulator->root->find<ares::Node::Port>(portName)) {
+              port->disconnect();
+              auto peripheral = port->allocate("Gamepad");
+              port->connect();
+              if(auto port = peripheral->find<ares::Node::Port>("Pak")) {
+#if defined(CORE_GB)
+                emulator->gb.reset();
+                auto transferPak = port->allocate("Transfer Pak");
+                port->connect();
+                
+                if(auto slot = transferPak->find<ares::Node::Port>("Cartridge Slot")) {
+                  emulator->gb = mia::Medium::create("Game Boy");
+                  string tmpPath;
+                  if(emulator->gb->load(emulator->load(emulator->gb, tmpPath))) {
+                    slot->allocate();
+                    slot->connect();
+                  } else {
+                    port->disconnect();
+                    emulator->gb.reset();
+                  }
+                }
+#endif
+              }
+            }
+          });
+          pakGroup.append(tpak);
+          
+          // set currently enabled pak
+          // Note: based on initialization routine in desktop-ui/emulator/nintendo-64.cpp & nintedo-64dd.cpp
+          if(emulator->game->pak->attribute("tpak").boolean() && portNum == "1") tpak.setChecked();
+          else if(emulator->game->pak->attribute("cpak").boolean() && portNum == "1") cpak.setChecked();
+          else if(emulator->game->pak->attribute("rpak").boolean()) rpak.setChecked();
+          else nothing.setChecked();
+        }
       }
     }
-  }
-
-  if(portsFound > 0) systemMenu.append(MenuSeparator());
-
-  MenuItem reset{&systemMenu};
-  reset.setText("Reset").setIcon(Icon::Action::Refresh).onActivate([&] {
-    emulator->root->power(true);
-    program.showMessage("System reset");
-  });
-  systemMenu.append(MenuSeparator());
-
-  MenuItem unload{&systemMenu};
-  unload.setText("Unload").setIcon(Icon::Media::Eject).onActivate([&] {
-  program.unload();
-  if(settings.video.adaptiveSizing) presentation.resizeWindow();
-    presentation.showIcon(true);
+    
+    if(portsFound > 0) systemMenu.append(MenuSeparator());
+    
+    MenuItem reset{&systemMenu};
+    reset.setText("Reset").setIcon(Icon::Action::Refresh).onActivate([&] {
+      emulator->root->power(true);
+      program.showMessage("System reset");
+    });
+    systemMenu.append(MenuSeparator());
+    
+    MenuItem unload{&systemMenu};
+    unload.setText("Unload").setIcon(Icon::Media::Eject).onActivate([&] {
+      program.unload();
+      if(settings.video.adaptiveSizing) presentation.resizeWindow();
+      presentation.showIcon(true);
+    });
   });
 }
 
 auto Presentation::unloadEmulator(bool reloading) -> void {
-  setTitle({ares::Name, " v", ares::Version});
-  setAssociatedFile();
-  systemMenu.setVisible(false);
-  systemMenu.reset();
-
-  toolsMenu.setVisible(false);
+  dispatch_async(dispatch_get_main_queue(), ^{
+    setTitle({ares::Name, " v", ares::Version});
+    setAssociatedFile();
+    systemMenu.setVisible(false);
+    systemMenu.reset();
+    
+    toolsMenu.setVisible(false);
+  });
 }
 
 auto Presentation::showIcon(bool visible) -> void {
-  iconLayout.setVisible(visible);
-  iconSpacer.setVisible(visible);
-  iconCanvas.setVisible(visible);
-  iconBottom.setVisible(visible);
-  layout.resize();
+  dispatch_async(dispatch_get_main_queue(), ^{
+    iconLayout.setVisible(visible);
+    iconSpacer.setVisible(visible);
+    iconCanvas.setVisible(visible);
+    iconBottom.setVisible(visible);
+    layout.resize();
+  });
 }
 
 auto Presentation::loadShaders() -> void {
-  videoShaderMenu.reset();
-  videoShaderMenu.setEnabled(ruby::video.hasShader());
-  if(!ruby::video.hasShader()) return;
-
-  Group shaders;
-
-  MenuCheckItem none{&videoShaderMenu};
-  none.setText("None").onToggle([&] {
-    settings.video.shader = "None";
-    ruby::video.setShader(settings.video.shader);
-    loadShaders();
-  });
-  shaders.append(none);
-
-  string location = locate("Shaders/");
-  #if defined(PLATFORM_LINUX) || defined(PLATFORM_BSD)
-  // In some Linux or BSD distro shaders may not be bundled with ares, so try to locate them at a different path
-  if(not inode::exists(location)) location = locate("../libretro/shaders/shaders_slang/");
-  #endif
-
-  if(shaderDirectories.size() == 0) {
-    function<void(string)> findShaderDirectories = [&](string path) {
-      for(auto &entry: directory::folders(path)) findShaderDirectories({path, entry});
-      auto files = directory::files(path, "*.slangp");
-      if(files.size() > 0) shaderDirectories.append((string({path}).trimLeft(location, 1L)));
-    };
-    findShaderDirectories(location);
-
-    // Sort by name and depth such that child folders appear after their parents
-    shaderDirectories.sort([](const string &lhs, const string &rhs) {
-      auto lhsParts = lhs.split("/");
-      auto rhsParts = rhs.split("/");
-      for(u32 i : range(min(lhsParts.size(), rhsParts.size()))) {
-        if(lhsParts[i] != rhsParts[i]) return lhsParts[i] < rhsParts[i];
-      }
-      return lhsParts.size() < rhsParts.size();
+  dispatch_async(dispatch_get_main_queue(), ^{
+    videoShaderMenu.reset();
+    videoShaderMenu.setEnabled(ruby::video.hasShader());
+    if(!ruby::video.hasShader()) return;
+    
+    Group shaders;
+    
+    MenuCheckItem none{&videoShaderMenu};
+    none.setText("None").onToggle([&] {
+      settings.video.shader = "None";
+      ruby::video.setShader(settings.video.shader);
+      loadShaders();
     });
-  }
-
-  if(ruby::video.hasShader()) {
-    for(auto &directory : shaderDirectories) {
-      auto parts = directory.split("/");
-      Menu parent = videoShaderMenu;
-
-      if(directory != "") {
-        for (auto &part: parts) {
-          if(part == "") continue;
-          Menu child;
-          bool found = false;
-          for(auto &action: parent.actions()) {
-            if(auto menu = action.cast<Menu>()) {
-              if(menu.text() == part) {
-                child = menu;
-                found = true;
-                break;
+    shaders.append(none);
+    
+    string location = locate("Shaders/");
+#if defined(PLATFORM_LINUX) || defined(PLATFORM_BSD)
+    // In some Linux or BSD distro shaders may not be bundled with ares, so try to locate them at a different path
+    if(not inode::exists(location)) location = locate("../libretro/shaders/shaders_slang/");
+#endif
+    
+    if(shaderDirectories.size() == 0) {
+      function<void(string)> findShaderDirectories = [&](string path) {
+        for(auto &entry: directory::folders(path)) findShaderDirectories({path, entry});
+        auto files = directory::files(path, "*.slangp");
+        if(files.size() > 0) shaderDirectories.append((string({path}).trimLeft(location, 1L)));
+      };
+      findShaderDirectories(location);
+      
+      // Sort by name and depth such that child folders appear after their parents
+      shaderDirectories.sort([](const string &lhs, const string &rhs) {
+        auto lhsParts = lhs.split("/");
+        auto rhsParts = rhs.split("/");
+        for(u32 i : range(min(lhsParts.size(), rhsParts.size()))) {
+          if(lhsParts[i] != rhsParts[i]) return lhsParts[i] < rhsParts[i];
+        }
+        return lhsParts.size() < rhsParts.size();
+      });
+    }
+    
+    if(ruby::video.hasShader()) {
+      for(auto &directory : shaderDirectories) {
+        auto parts = directory.split("/");
+        Menu parent = videoShaderMenu;
+        
+        if(directory != "") {
+          for (auto &part: parts) {
+            if(part == "") continue;
+            Menu child;
+            bool found = false;
+            for(auto &action: parent.actions()) {
+              if(auto menu = action.cast<Menu>()) {
+                if(menu.text() == part) {
+                  child = menu;
+                  found = true;
+                  break;
+                }
               }
             }
-          }
-
-          if(found) {
-            parent = child;
-          } else {
-            Menu newMenu{&parent};
-            newMenu.setText(part);
-            parent = newMenu;
+            
+            if(found) {
+              parent = child;
+            } else {
+              Menu newMenu{&parent};
+              newMenu.setText(part);
+              parent = newMenu;
+            }
           }
         }
-      }
-
-      auto files = directory::files({location, directory}, "*.slangp");
-      for(auto &file: files) {
-        MenuCheckItem item{&parent};
-        item.setAttribute("file", {directory, file});
-        item.setText(string{file}.trimRight(".slangp", 1L)).onToggle([=] {
-          settings.video.shader = {directory, file};
-          ruby::video.setShader({location, settings.video.shader});
-          loadShaders();
-        });
-        shaders.append(item);
+        
+        auto files = directory::files({location, directory}, "*.slangp");
+        for(auto &file: files) {
+          MenuCheckItem item{&parent};
+          item.setAttribute("file", {directory, file});
+          item.setText(string{file}.trimRight(".slangp", 1L)).onToggle([=] {
+            settings.video.shader = {directory, file};
+            ruby::video.setShader({location, settings.video.shader});
+            loadShaders();
+          });
+          shaders.append(item);
+        }
       }
     }
-  }
-
-  if(program.startShader) {
-    string existingShader = settings.video.shader;
-
-    if(!program.startShader.imatch("None")) {
-      settings.video.shader = {location, program.startShader, ".slangp"};
-    } else {
-      settings.video.shader = program.startShader;
-    }
-
-    if(inode::exists(settings.video.shader)) {
-      ruby::video.setShader({location, settings.video.shader});
-      loadShaders();
-    } else if(settings.video.shader.imatch("None")) {
-      ruby::video.setShader("None");
-      loadShaders();
-    } else {
-      hiro::MessageDialog()
+    
+    if(program.startShader) {
+      string existingShader = settings.video.shader;
+      
+      if(!program.startShader.imatch("None")) {
+        settings.video.shader = {location, program.startShader, ".slangp"};
+      } else {
+        settings.video.shader = program.startShader;
+      }
+      
+      if(inode::exists(settings.video.shader)) {
+        ruby::video.setShader({location, settings.video.shader});
+        loadShaders();
+      } else if(settings.video.shader.imatch("None")) {
+        ruby::video.setShader("None");
+        loadShaders();
+      } else {
+        hiro::MessageDialog()
           .setTitle("Warning")
           .setAlignment(hiro::Alignment::Center)
           .setText({ "Requested shader not found: ", settings.video.shader , "\nUsing existing defined shader: ", existingShader })
           .warning();
-      settings.video.shader = existingShader;
+        settings.video.shader = existingShader;
+      }
     }
-  }
-
-  if(settings.video.shader.imatch("None")) {none.setChecked(); settings.video.shader = "None";}
-  for(auto item : shaders.objects<MenuCheckItem>()) {
-    if(settings.video.shader.imatch(item.attribute("file"))) {
-      item.setChecked();
-      settings.video.shader = item.attribute("file");
-      ruby::video.setShader({location, settings.video.shader});
+    
+    if(settings.video.shader.imatch("None")) {none.setChecked(); settings.video.shader = "None";}
+    for(auto item : shaders.objects<MenuCheckItem>()) {
+      if(settings.video.shader.imatch(item.attribute("file"))) {
+        item.setChecked();
+        settings.video.shader = item.attribute("file");
+        ruby::video.setShader({location, settings.video.shader});
+      }
     }
-  }
+  });
 }

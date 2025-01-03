@@ -17,6 +17,7 @@
 #include <nall/unique-pointer.hpp>
 #include <nall/utility.hpp>
 #include <nall/vector.hpp>
+#include <dispatch/dispatch.h>
 
 using nall::any;
 using nall::function;

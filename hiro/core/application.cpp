@@ -59,6 +59,10 @@ auto Application::quit() -> void {
   return pApplication::quit();
 }
 
+auto Application::getQueue() -> dispatch_queue_t {
+  return pApplication::getQueue();
+}
+
 auto Application::scale() -> f32 {
   return state().scale;
 }

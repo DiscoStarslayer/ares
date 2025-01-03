@@ -32,7 +32,7 @@ unsigned get_current_thread_index()
 	auto ret = thread_id_to_index;
 	if (ret == ~0u)
 	{
-		LOGE("Thread does not exist in thread manager or is not the main thread.\n");
+		//LOGE("Thread does not exist in thread manager or is not the main thread.\n");
 		return 0;
 	}
 	return ret;

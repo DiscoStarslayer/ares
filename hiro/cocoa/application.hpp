@@ -13,6 +13,7 @@ struct pApplication {
   static auto exit() -> void;
   static auto modal() -> bool;
   static auto run() -> void;
+  static auto getQueue() -> dispatch_queue_t;
   static auto pendingEvents() -> bool;
   static auto processEvents() -> void;
   static auto quit() -> void;

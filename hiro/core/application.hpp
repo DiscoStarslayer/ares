@@ -13,6 +13,7 @@ struct Application {
   static auto onMain(const function<void ()>& callback = {}) -> void;
   static auto onOpenFile(const function<void (const string& path)>& callback = {}) -> void;
   static auto run() -> void;
+  static auto getQueue() -> dispatch_queue_t;
   static auto scale() -> f32;
   static auto scale(f32 value) -> f32;
   static auto pendingEvents() -> bool;

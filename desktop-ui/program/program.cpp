@@ -6,6 +6,7 @@
 #include "status.cpp"
 #include "utility.cpp"
 #include "drivers.cpp"
+#include <dispatch/dispatch.h>
 
 Program program;
 
@@ -46,8 +47,9 @@ auto Program::main() -> void {
     ruby::audio.clear();
     return;
   }
-
-  updateMessage();
+  dispatch_async(dispatch_get_main_queue(), ^{
+    updateMessage();
+  });
   inputManager.poll();
   inputManager.pollHotkeys();
 
@@ -55,9 +57,11 @@ auto Program::main() -> void {
   if(emulator && defocused) message.text = "Paused";
 
   if(settings.debugServer.enabled) {
-    presentation.statusDebug.setText(
-      nall::GDB::server.getStatusText(settings.debugServer.port, settings.debugServer.useIPv4)
-    );
+    dispatch_async(dispatch_get_main_queue(), ^{
+      presentation.statusDebug.setText(
+                                       nall::GDB::server.getStatusText(settings.debugServer.port, settings.debugServer.useIPv4)
+                                       );
+    });
   }
 
   if(emulator && nall::GDB::server.isHalted()) {
@@ -66,7 +70,7 @@ auto Program::main() -> void {
     return;
   }
 
-  if(!emulator || (paused && !program.requestFrameAdvance) || defocused) {
+  if(!emulator || (paused && !program.requestFrameAdvance) || defocused || !loaded) {
     ruby::audio.clear();
     nall::GDB::server.updateLoop();
     usleep(20 * 1000);
@@ -78,16 +82,18 @@ auto Program::main() -> void {
   nall::GDB::server.updateLoop();
 
   program.requestFrameAdvance = false;
-  if(!runAhead || fastForwarding || rewinding) {
-    emulator->root->run();
-  } else {
-    ares::setRunAhead(true);
-    emulator->root->run();
-    auto state = emulator->root->serialize(false);
-    ares::setRunAhead(false);
-    emulator->root->run();
-    state.setReading();
-    emulator->root->unserialize(state);
+  if (!unloading) {
+    if(!runAhead || fastForwarding || rewinding) {
+      emulator->root->run();
+    } else {
+      ares::setRunAhead(true);
+      emulator->root->run();
+      auto state = emulator->root->serialize(false);
+      ares::setRunAhead(false);
+      emulator->root->run();
+      state.setReading();
+      emulator->root->unserialize(state);
+    }
   }
 
   nall::GDB::server.updateLoop();
@@ -105,16 +111,25 @@ auto Program::main() -> void {
   //window operations must be performed from the main thread.
   if(emulator->latch.changed) {
     emulator->latch.changed = false;
-    if(settings.video.adaptiveSizing) presentation.resizeWindow();
+    if(settings.video.adaptiveSizing) {
+      dispatch_async(dispatch_get_main_queue(), ^{
+        presentation.resizeWindow();
+      });
+    }
   }
 
-  memoryEditor.liveRefresh();
-  graphicsViewer.liveRefresh();
-  propertiesViewer.liveRefresh();
+  dispatch_async(dispatch_get_main_queue(), ^{
+    memoryEditor.liveRefresh();
+    graphicsViewer.liveRefresh();
+    propertiesViewer.liveRefresh();
+  });
 }
 
 auto Program::quit() -> void {
-  unload();
+  dispatch_queue_t queue = Application::getQueue();
+  dispatch_sync(queue, ^{
+    unload();
+  });
   Application::processEvents();
   Application::quit();
 
