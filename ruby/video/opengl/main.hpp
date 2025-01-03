@@ -17,8 +17,16 @@ auto OpenGL::setShader(const string& pathname) -> void {
     _libra.preset_free(&_preset);
   }
 
+  if (_context != NULL) {
+    _libra.preset_ctx_free(&_context);
+  }
+
+  _libra.preset_ctx_create(&_context);
+
+  libra_preset_opt_t options = { .version = 2, .original_aspect_uniforms = true, .frametime_uniforms = true };
+
   if(file::exists(pathname)) {
-    if(_libra.preset_create(pathname.data(), &_preset) != NULL) {
+    if(_libra.preset_create_with_options(pathname.data(), &_context, &options, &_preset) != NULL) {
       print(string{"OpenGL: Failed to load shader: ", pathname, "\n"});
       setShader("");
       return;
@@ -44,9 +52,10 @@ auto OpenGL::lock(u32*& data, u32& pitch) -> bool {
   return data = buffer;
 }
 
-auto OpenGL::output() -> void {
+auto OpenGL::output(u32 subFrame) -> void {
   clear();
 
+  // DARREN
   glActiveTexture(GL_TEXTURE0);
   glBindTexture(GL_TEXTURE_2D, texture);
   glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, width, height, getFormat(), getType(), buffer);
@@ -110,7 +119,7 @@ auto OpenGL::output() -> void {
     }
   }
 
-  render(sources[0].width, sources[0].height, outputX + x, outputY + y, targetWidth, targetHeight);
+  render(sources[0].width, sources[0].height, outputX + x, outputY + y, targetWidth, targetHeight, subFrame);
 }
 
 auto OpenGL::initialize(const string& shader) -> bool {

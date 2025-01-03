@@ -1,3 +1,5 @@
+#include "ares/n64/vulkan/parallel-rdp/util/timer.hpp"
+
 auto OpenGLSurface::size(u32 w, u32 h) -> void {
   if(width == w && height == h) return;
   width = w, height = h;
@@ -18,7 +20,7 @@ auto OpenGLSurface::release() -> void {
   width = 0, height = 0;
 }
 
-auto OpenGLSurface::render(u32 sourceWidth, u32 sourceHeight, u32 targetX, u32 targetY, u32 targetWidth, u32 targetHeight) -> void {
+auto OpenGLSurface::render(u32 sourceWidth, u32 sourceHeight, u32 targetX, u32 targetY, u32 targetWidth, u32 targetHeight, u32 subFrame) -> void {
   glBindTexture(GL_TEXTURE_2D, texture);
   glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
@@ -26,7 +28,13 @@ auto OpenGLSurface::render(u32 sourceWidth, u32 sourceHeight, u32 targetX, u32 t
     libra_image_gl_t input = {texture, format, sourceWidth, sourceHeight};
     libra_image_gl_t output = {framebufferTexture, framebufferFormat, targetWidth, targetHeight};
 
-    if (auto error = _libra.gl_filter_chain_frame(&_chain, frameCount++, input, output, NULL, NULL, NULL)) {
+    auto currentTime = Util::get_current_time_nsecs();
+    auto diff = currentTime - lastFrame;
+    lastFrame = currentTime;
+
+    frame_gl_opt_t options = { 2, false, 0, 0, 4, subFrame, 0, 60, static_cast<uint32_t>(diff) };
+
+    if (auto error = _libra.gl_filter_chain_frame(&_chain, (frameCount++) / 4, input, output, NULL, NULL, &options)) {
       _libra.error_print(error);
     }
 

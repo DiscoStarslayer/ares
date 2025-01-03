@@ -39,6 +39,17 @@ struct VideoWGL : VideoDriver, OpenGL {
     return initialize();
   }
 
+  auto refreshRateHint(double refreshRate) -> void override {
+    if (refreshRate == _refreshRateHint) return;
+    _refreshRateHint = refreshRate;
+
+    auto deviceRefresh = GetDeviceCaps(_display, VREFRESH);
+
+    _subFrames = 4;
+
+    print(string{"Refresh rate hint set to ", _refreshRateHint, "\n", "Device refresh rate ", deviceRefresh, "\n", "SubFrames ", _subFrames, "\n" });
+  }
+
   auto setBlocking(bool blocking) -> bool override {
     acquireContext();
     if(wglSwapInterval) wglSwapInterval(blocking);
@@ -47,6 +58,7 @@ struct VideoWGL : VideoDriver, OpenGL {
   }
 
   auto setFlush(bool flush) -> bool override {
+    self.flush = flush;
     return true;
   }
 
@@ -104,10 +116,14 @@ struct VideoWGL : VideoDriver, OpenGL {
     OpenGL::outputY = 0;
     OpenGL::outputWidth = windowWidth;
     OpenGL::outputHeight = windowHeight;
-    OpenGL::output();
+    OpenGL::refreshRateHint = _refreshRateHint;
 
-    SwapBuffers(_display);
-    if(self.flush) glFinish();
+    for (uint i = 0; i < _subFrames; i++) {
+      OpenGL::output(i);
+      SwapBuffers(_display);
+      if(self.flush) glFinish();
+    }
+
     releaseContext();
   }
 
@@ -222,6 +238,9 @@ private:
   s32 _monitorY = 0;
   s32 _monitorWidth = 0;
   s32 _monitorHeight = 0;
+
+  double _refreshRateHint = 0;
+  int _subFrames = 0;
 
   HWND _window = nullptr;
   HWND _context = nullptr;

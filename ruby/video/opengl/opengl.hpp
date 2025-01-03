@@ -24,6 +24,7 @@
 
 #include "bind.hpp"
 #include "utility.hpp"
+#include "ares/n64/vulkan/parallel-rdp/util/timer.hpp"
 
 struct OpenGL;
 
@@ -42,7 +43,7 @@ struct OpenGLTexture {
 struct OpenGLSurface : OpenGLTexture {
   auto size(u32 width, u32 height) -> void;
   auto release() -> void;
-  auto render(u32 sourceWidth, u32 sourceHeight, u32 targetX, u32 targetY, u32 targetWidth, u32 targetHeight) -> void;
+  auto render(u32 sourceWidth, u32 sourceHeight, u32 targetX, u32 targetY, u32 targetWidth, u32 targetHeight, u32 subFrame) -> void;
 
   GLuint framebuffer = 0;
   GLuint framebufferTexture = 0;
@@ -54,14 +55,16 @@ struct OpenGLSurface : OpenGLTexture {
   libra_instance_t _libra;
   libra_shader_preset_t _preset = NULL;
   libra_gl_filter_chain_t  _chain = NULL;
+  libra_preset_ctx_t _context = NULL;
   u32 frameCount = 0;
+  u32 lastFrame = Util::get_current_time_nsecs();
 };
 
 struct OpenGL : OpenGLSurface {
   auto setShader(const string& pathname) -> void;
   auto clear() -> void;
   auto lock(u32*& data, u32& pitch) -> bool;
-  auto output() -> void;
+  auto output(u32 subFrame) -> void;
   auto initialize(const string& shader) -> bool;
   auto terminate() -> void;
   static auto resolveSymbol(const char* name) -> const void*;
@@ -73,6 +76,7 @@ struct OpenGL : OpenGLSurface {
   u32 outputY = 0;
   u32 outputWidth = 0;
   u32 outputHeight = 0;
+  double refreshRateHint = 0;
   struct Setting {
     string name;
     string value;

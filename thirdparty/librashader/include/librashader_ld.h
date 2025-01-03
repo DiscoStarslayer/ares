@@ -29,18 +29,18 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 // Uncomment the following defines to activate runtimes.
 
-// #define LIBRA_RUNTIME_OPENGL
-// #define LIBRA_RUNTIME_VULKAN
+ #define LIBRA_RUNTIME_OPENGL
+ #define LIBRA_RUNTIME_VULKAN
 
-// #if defined(_WIN32)
-// #define LIBRA_RUNTIME_D3D11
-// #define LIBRA_RUNTIME_D3D12
-// #define LIBRA_RUNTIME_D3D9
-// #endif
+ #if defined(_WIN32)
+ #define LIBRA_RUNTIME_D3D11
+ #define LIBRA_RUNTIME_D3D12
+ #define LIBRA_RUNTIME_D3D9
+ #endif
 
-// #if (defined(__APPLE__) && defined(__OBJC__))
-// #define LIBRA_RUNTIME_METAL
-// #endif
+ #if (defined(__APPLE__) && defined(__OBJC__))
+ #define LIBRA_RUNTIME_METAL
+ #endif
 
 #if defined(_WIN32)
 #include <windows.h>
@@ -1540,8 +1540,8 @@ libra_instance_t __librashader_make_null_instance(void) {
 #if defined(LIBRA_RUNTIME_D3D9)
     instance.d3d9_filter_chain_create =
         __librashader__noop_d3d9_filter_chain_create;
-    instance.d3d9_filter_chain_create_deferred =
-        __librashader__noop_d3d9_filter_chain_create_deferred;
+//    instance.d3d9_filter_chain_create_deferred =
+//        __librashader__noop_d3d9_filter_chain_create_deferred;
     instance.d3d9_filter_chain_frame =
         __librashader__noop_d3d9_filter_chain_frame;
     instance.d3d9_filter_chain_free =

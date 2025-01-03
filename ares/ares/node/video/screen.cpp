@@ -27,9 +27,10 @@ auto Screen::main(uintptr_t) -> void {
   while(!_kill) {
     unique_lock<mutex> lock(_frameMutex);
 
-    auto timeout = std::chrono::milliseconds(10);
+    auto timeout = std::chrono::milliseconds(16);
     if(_frameCondition.wait_for(lock, timeout, [&] { return _frame.load(); })) {
       refresh();
+
       _frame = false;
     }
 
