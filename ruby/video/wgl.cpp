@@ -26,6 +26,7 @@ struct VideoWGL : VideoDriver, OpenGL {
   auto hasBlocking() -> bool override { return true; }
   auto hasFlush() -> bool override { return true; }
   auto hasShader() -> bool override { return true; }
+  auto hasThreadedRenderer() -> bool override { return true; }
 
   auto setFullScreen(bool fullScreen) -> bool override {
     return initialize();
@@ -54,6 +55,11 @@ struct VideoWGL : VideoDriver, OpenGL {
     acquireContext();
     OpenGL::setShader(self.shader);
     releaseContext();
+    return true;
+  }
+
+  auto setThreadedRenderer(bool threadedRenderer) -> bool override {
+    _threaded = threadedRenderer;
     return true;
   }
 
@@ -217,6 +223,7 @@ private:
   auto (APIENTRY* wglSwapInterval)(int) -> BOOL = nullptr;
 
   bool _ready = false;
+  bool _threaded = true;
 
   s32 _monitorX = 0;
   s32 _monitorY = 0;
